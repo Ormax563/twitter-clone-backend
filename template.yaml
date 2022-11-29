@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  twitter-clone
+
+Transform:
+  - AWS::Serverless-2016-10-31
+Parameters:
+  TweetsTableName:
+    Type: String
+    Default: tweets-table
+
+Globals:
+  Function:
+    Tracing: Active
+    Runtime: nodejs14.x
+    Handler: index.handler
+    Environment:
+      Variables:
+        USER_POOL: !Ref MyCognitoUserPool
+        USER_POOL_CLIENT: !Ref CognitoClient
+        TWEETS_TABLE_NAME: !Ref TweetsTableName
+  Api:
+    TracingEnabled: True
+
+Resources:
+  SignUp:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Twitter_Clone_SignUp
+      CodeUri: functions/sign-up/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to create a new user.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /sign-up
+            Method: POST
+  SignIn:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Twitter_Clone_SignIn
+      CodeUri: functions/sign-in/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to authenticate an user.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /sign-in
+            Method: POST
+  SignOut:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: Twitter_Clone_SignOut
+      CodeUri: functions/sign-out/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to logout an user.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /sign-out
+            Method: POST
+  CreateTweet:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt TweetsFunctionsRole.Arn
+      FunctionName: Twitter_Clone_CreateTweet
+      CodeUri: functions/create-tweet/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to create a tweet.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /create-tweet
+            Method: POST
+  DeleteTweet:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt TweetsFunctionsRole.Arn
+      FunctionName: Twitter_Clone_DeleteTweet
+      CodeUri: functions/delete-tweet/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to delete a tweet.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /delete-tweet
+            Method: POST
+  EditTweet:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt TweetsFunctionsRole.Arn
+      FunctionName: Twitter_Clone_EditTweet
+      CodeUri: functions/edit-tweet/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to edit a tweet.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /edit-tweet
+            Method: POST
+  GetTweets:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt TweetsFunctionsRole.Arn
+      FunctionName: Twitter_Clone_GetTweets
+      CodeUri: functions/get-tweets/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to get tweets.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /get-tweets
+            Method: POST
+  ScanTweets:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt TweetsFunctionsRole.Arn
+      FunctionName: Twitter_Clone_ScanTweets
+      CodeUri: functions/scan-tweets/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to scan tweets.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /scan-tweets
+            Method: POST
+  TweetsFunctionsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CRUD_DynamoDB
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:BatchWriteItem'
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:DescribeTable'
+                  - 'dynamodb:ConditionCheckItem'
+                Resource: !GetAtt TweetsTable.Arn
+  MyCognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: 'twitter-clone-users-pool'
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 6
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: false
+  CognitoClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: 'twitter-pool-client'
+      UserPoolId: !Ref MyCognitoUserPool
+      ExplicitAuthFlows:
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+  TweetsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TweetsTableName
+      AttributeDefinitions:
+        - AttributeName: user
+          AttributeType: S
+        - AttributeName: tweet-id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user
+          KeyType: HASH
+        - AttributeName: tweet-id
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
