@@ -11,7 +11,12 @@ exports.handler = async (event) => {
     ClientId: process.env.USER_POOL_CLIENT, 
     Password: body.password, 
     Username: body.email, 
-    UserAttributes: []
+    UserAttributes: [
+      {
+        Name: "custom:username",
+        Value: body.username
+      }
+    ]
   };
   let response = {
     statusCode: 200,

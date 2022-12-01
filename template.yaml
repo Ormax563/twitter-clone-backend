@@ -8,7 +8,12 @@ Parameters:
   TweetsTableName:
     Type: String
     Default: tweets-table
-
+  FollowersTableName:
+    Type: String
+    Default: followers-table
+  FollowersGSIName:
+    Type: String
+    Default: FollowersGSI
 Globals:
   Function:
     Tracing: Active
@@ -19,6 +24,8 @@ Globals:
         USER_POOL: !Ref MyCognitoUserPool
         USER_POOL_CLIENT: !Ref CognitoClient
         TWEETS_TABLE_NAME: !Ref TweetsTableName
+        FOLLOWERS_TABLE_NAME: !Ref FollowersTableName
+        FOLLOWERS_GSI_NAME: !Ref FollowersGSIName
   Api:
     TracingEnabled: True
 
@@ -26,6 +33,7 @@ Resources:
   SignUp:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !GetAtt UsersFunctionsRole.Arn
       FunctionName: Twitter_Clone_SignUp
       CodeUri: functions/sign-up/
       Architectures:
@@ -42,6 +50,7 @@ Resources:
   SignIn:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !GetAtt UsersFunctionsRole.Arn
       FunctionName: Twitter_Clone_SignIn
       CodeUri: functions/sign-in/
       Architectures:
@@ -58,6 +67,7 @@ Resources:
   SignOut:
     Type: AWS::Serverless::Function
     Properties:
+      Role: !GetAtt UsersFunctionsRole.Arn
       FunctionName: Twitter_Clone_SignOut
       CodeUri: functions/sign-out/
       Architectures:
@@ -156,6 +166,88 @@ Resources:
           Properties:
             Path: /scan-tweets
             Method: POST
+  CreateFollower:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt FollowersFunctionsRole.Arn
+      FunctionName: Twitter_Clone_CreateFollower
+      CodeUri: functions/create-follower/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to create a follower.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /create-follower
+            Method: POST
+  DeleteFollower:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt FollowersFunctionsRole.Arn
+      FunctionName: Twitter_Clone_DeleteFollower
+      CodeUri: functions/delete-follower/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to delete a follower.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /delete-follower
+            Method: POST
+  ListFollower:
+    Type: AWS::Serverless::Function
+    Properties:
+      Role: !GetAtt FollowersFunctionsRole.Arn
+      FunctionName: Twitter_Clone_ListFollowers
+      CodeUri: functions/list-followers/
+      Architectures:
+        - x86_64
+      MemorySize: 128
+      Timeout: 100
+      Description: HTTP Post method to list followers of a user.
+      Events:
+        Api:
+          Type: Api
+          Properties:
+            Path: /list-followers
+            Method: POST
+  UsersFunctionsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CognitoPermissions
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'cognito-idp:*'
+                Resource: !GetAtt MyCognitoUserPool.Arn
+        - PolicyName: LambdaBasics
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
   TweetsFunctionsRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -186,6 +278,58 @@ Resources:
                   - 'dynamodb:DescribeTable'
                   - 'dynamodb:ConditionCheckItem'
                 Resource: !GetAtt TweetsTable.Arn
+        - PolicyName: LambdaBasics
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+  FollowersFunctionsRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: CRUD_DynamoDB
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'dynamodb:GetItem'
+                  - 'dynamodb:DeleteItem'
+                  - 'dynamodb:PutItem'
+                  - 'dynamodb:Scan'
+                  - 'dynamodb:Query'
+                  - 'dynamodb:UpdateItem'
+                  - 'dynamodb:BatchWriteItem'
+                  - 'dynamodb:BatchGetItem'
+                  - 'dynamodb:DescribeTable'
+                  - 'dynamodb:ConditionCheckItem'
+                Resource: 
+                  - !GetAtt FollowersTable.Arn
+                  - !Join [ "/", [ !GetAtt FollowersTable.Arn, index, !Ref FollowersGSIName]]
+        - PolicyName: LambdaBasics
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: 
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
   MyCognitoUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -198,6 +342,9 @@ Resources:
       Schema:
         - AttributeDataType: String
           Name: email
+          Required: false
+        - AttributeDataType: String
+          Name: username
           Required: false
   CognitoClient:
     Type: AWS::Cognito::UserPoolClient
@@ -224,4 +371,33 @@ Resources:
       ProvisionedThroughput: 
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+  FollowersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref FollowersTableName
+      AttributeDefinitions:
+        - AttributeName: user
+          AttributeType: S
+        - AttributeName: follow
+          AttributeType: S
+      KeySchema:
+        - AttributeName: user
+          KeyType: HASH
+        - AttributeName: follow
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+      GlobalSecondaryIndexes:
+        - IndexName: !Ref FollowersGSIName
+          KeySchema:
+            - AttributeName: follow
+              KeyType: HASH
+            - AttributeName: user
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+          ProvisionedThroughput: 
+            ReadCapacityUnits: 5
+            WriteCapacityUnits: 5
 
