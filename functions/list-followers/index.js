@@ -5,7 +5,7 @@ const dynamodb = new AWS.DynamoDB();
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
     const user = body.user;
-    const limit = body.limit ? body.limit : 1;
+    const limit = body.limit ? body.limit : 10;
     const lastKey = body.lastKey ? body.lastKey: undefined;
     const paramsFollowers = {
         ExpressionAttributeValues: {
@@ -24,7 +24,14 @@ exports.handler = async (event) => {
         response = {
             statusCode: 200,
             body: JSON.stringify( { 
-                followers: res.Items,
+                followers: res.Items.map(item =>{
+                    return(
+                        {
+                            follow: item["follow"]["S"],
+                            user: item["user"]["S"]
+                        }
+                    )
+                }),
                 lastKey:  res.LastEvaluatedKey 
             } )
           };

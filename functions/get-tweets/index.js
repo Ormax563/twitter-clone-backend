@@ -41,8 +41,17 @@ exports.handler = async (event) => {
     .then((res) =>{
         response = {
             statusCode: 200,
-            body: JSON.stringify( { tweets: res.Items } )
-          };
+            body: JSON.stringify( { tweets: res.Items.map(item =>{
+                return(
+                    {
+                        tweetID: item["tweet-id"]["S"],
+                        user: item["user"]["S"],
+                        tweet: item["tweet"]["S"]
+                    }
+                )
+            }) 
+        })
+        };
     })
     .catch((error) =>{
         console.log("ERROR FROM DYNAMODB QUERY => ", error);

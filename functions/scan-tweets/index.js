@@ -4,7 +4,7 @@ const dynamodb = new AWS.DynamoDB();
 
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
-    const limit = body.limit ? body.limit : 1;
+    const limit = body.limit ? body.limit : 10;
     const lastKey = body.lastKey ? body.lastKey: undefined;
     const paramsTweet = {
         TableName: process.env.TWEETS_TABLE_NAME,
@@ -16,7 +16,15 @@ exports.handler = async (event) => {
         response = {
             statusCode: 200,
             body: JSON.stringify( { 
-                tweets: res.Items,
+                tweets: res.Items.map(item =>{
+                    return(
+                        {
+                            tweetID: item["tweet-id"]["S"],
+                            user: item["user"]["S"],
+                            tweet: item["tweet"]["S"]
+                        }
+                    )
+                }) ,
                 lastKey:  res.LastEvaluatedKey 
             } )
           };
