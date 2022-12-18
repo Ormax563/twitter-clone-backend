@@ -11,7 +11,7 @@ Note: In the future I will continue adding new features.
 ## General info
 This project is the Back-end component of my personal twitter clone project.
 
-You cand find the Front-end here: https://github.com/Ormax563/twitter-clone-frontend.
+You can find the Front-end here: https://github.com/Ormax563/twitter-clone-frontend.
 
 Link of the live app: https://master.d28wb0l6mr16n7.amplifyapp.com/
 
