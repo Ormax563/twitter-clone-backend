@@ -2,14 +2,18 @@
 
 A simple twitter clone with basic functionality (create tweets, follow users), built using AWS services such as Lambda, API Gateway, DynamoDB, Cognito, IAM, etc..
 
-Note: This project is still under building, but you can start using it and modify the code on your own.
+Note: In the future I will continue adding new features.
 ## Table of contents
 * [General info](#general-info)
 * [Technologies](#technologies)
 * [Setup](#setup)
 * [API Documentation](#setup)
 ## General info
-This project is the Back-end component of my personal twitter clone project. Front-end is coming soon ....
+This project is the Back-end component of my personal twitter clone project.
+
+You cand find the Front-end here: https://github.com/Ormax563/twitter-clone-frontend.
+
+Link of the live app: https://master.d28wb0l6mr16n7.amplifyapp.com/
 
 ## Technologies
 Project is created with:
