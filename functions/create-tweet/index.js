@@ -1,11 +1,12 @@
 const AWS = require("aws-sdk");
 const {randomUUID} = require('crypto');
-
+const { HEADERS } = require("/opt/nodejs/index");
 const COGNITO_CLIENT = new AWS.CognitoIdentityServiceProvider({
   apiVersion: "2016-04-19",
   region: "us-east-1"
 });
 const dynamodb = new AWS.DynamoDB();
+const moment = require('moment');
 
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
@@ -26,7 +27,7 @@ exports.handler = async (event) => {
     }
     
     const username = user.Username;
-    
+    const nickname = user.UserAttributes.find((item)=>item.Name === "custom:username").Value;
     const paramsTweet = {
         Item: {
             "user":{
@@ -37,6 +38,12 @@ exports.handler = async (event) => {
             },
             "tweet":{
                 S: tweet
+            },
+            "nickname":{
+                S: nickname
+            },
+            "createdAt":{
+                S: moment().format('YYYY-MM-DD HH:mm:ss')
             }
         },
     ReturnConsumedCapacity: "TOTAL", 
@@ -48,14 +55,16 @@ exports.handler = async (event) => {
             statusCode: 200,
             body: JSON.stringify({
                 message: "Tweet created successfully"
-            })
+            }),
+            headers: HEADERS
           };
     })
     .catch((error) =>{
         console.log("ERROR FROM DYNAMODB PUTITEM => ", error);
         response = {
             statusCode: error.statusCode,
-            body: JSON.stringify( { message: error.code } )
+            body: JSON.stringify( { message: error.code } ),
+            headers: HEADERS
         };
     })
     return response;

@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-
+const { HEADERS } = require("/opt/nodejs/index");
 const dynamodb = new AWS.DynamoDB();
 
 exports.handler = async (event) => {
@@ -33,14 +33,16 @@ exports.handler = async (event) => {
                     )
                 }),
                 lastKey:  res.LastEvaluatedKey 
-            } )
+            } ),
+            headers: HEADERS
           };
     })
     .catch((error) =>{
         console.log("ERROR FROM DYNAMODB SCAN => ", error);
         response = {
             statusCode: error.statusCode,
-            body: JSON.stringify( { message: error.code } )
+            body: JSON.stringify( { message: error.code } ),
+            headers: HEADERS
         };
     })
     return response;

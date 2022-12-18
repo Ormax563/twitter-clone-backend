@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-
+const { HEADERS } = require("/opt/nodejs/index");
 const COGNITO_CLIENT = new AWS.CognitoIdentityServiceProvider({
   apiVersion: "2016-04-19",
   region: "us-east-1"
@@ -43,14 +43,16 @@ exports.handler = async (event) => {
             statusCode: 200,
             body: JSON.stringify({
                 message: "Tweet deleted successfully"
-            })
+            }),
+            headers: HEADERS
           };
     })
     .catch((error) =>{
         console.log("ERROR FROM DYNAMODB DELETEITEM => ", error);
         response = {
             statusCode: error.statusCode,
-            body: JSON.stringify( { message: error.code } )
+            body: JSON.stringify( { message: error.code } ),
+            headers: HEADERS
         };
     })
     return response;

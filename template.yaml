@@ -19,6 +19,8 @@ Globals:
     Tracing: Active
     Runtime: nodejs14.x
     Handler: index.handler
+    Layers:
+      - !Ref SharedDependencies
     Environment:
       Variables:
         USER_POOL: !Ref MyCognitoUserPool
@@ -30,6 +32,25 @@ Globals:
     TracingEnabled: True
 
 Resources:
+  TwitterCloneApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      Auth:
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          UsagePlanName: GatewayAuthorization
+      MethodSettings:
+        - CachingEnabled: true
+          CacheTtlInSeconds: 60
+          HttpMethod: '*'
+          ResourcePath: '/*'
+      Cors:
+        AllowMethods: "'POST, GET, OPTIONS'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+        AllowCredentials: "'*'"
+        MaxAge: "'600'"
   SignUp:
     Type: AWS::Serverless::Function
     Properties:
@@ -45,6 +66,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /sign-up
             Method: POST
   SignIn:
@@ -62,6 +84,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /sign-in
             Method: POST
   SignOut:
@@ -79,6 +102,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /sign-out
             Method: POST
   CreateTweet:
@@ -96,6 +120,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /create-tweet
             Method: POST
   DeleteTweet:
@@ -113,6 +138,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /delete-tweet
             Method: POST
   EditTweet:
@@ -130,6 +156,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /edit-tweet
             Method: POST
   GetTweets:
@@ -147,6 +174,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /get-tweets
             Method: POST
   ScanTweets:
@@ -164,6 +192,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /scan-tweets
             Method: POST
   CreateFollower:
@@ -181,6 +210,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /create-follower
             Method: POST
   DeleteFollower:
@@ -198,6 +228,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /delete-follower
             Method: POST
   ListFollower:
@@ -215,6 +246,7 @@ Resources:
         Api:
           Type: Api
           Properties:
+            RestApiId: !Ref TwitterCloneApi
             Path: /list-followers
             Method: POST
   UsersFunctionsRole:
@@ -400,4 +432,13 @@ Resources:
           ProvisionedThroughput: 
             ReadCapacityUnits: 5
             WriteCapacityUnits: 5
-
+  SharedDependencies:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: TwitterClone_Dependencies
+      Description: Dependencies for twitter clone backend
+      ContentUri: dependencies/nodejs
+      CompatibleRuntimes:
+        - nodejs12.x
+    Metadata:
+      BuildMethod: nodejs14.x

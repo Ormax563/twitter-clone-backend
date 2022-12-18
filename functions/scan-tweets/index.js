@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-
+const { HEADERS } = require("/opt/nodejs/index");
 const dynamodb = new AWS.DynamoDB();
 
 exports.handler = async (event) => {
@@ -21,19 +21,25 @@ exports.handler = async (event) => {
                         {
                             tweetID: item["tweet-id"]["S"],
                             user: item["user"]["S"],
-                            tweet: item["tweet"]["S"]
+                            tweet: item["tweet"]["S"],
+                            nickname: item["nickname"]["S"],
+                            createdAt: item["createdAt"]["S"]
                         }
                     )
-                }) ,
+                }).sort((a,b) => 
+                    new Date(a["createdAt"]["S"]) - new Date(b["createdAt"]["S"])
+                ).reverse() ,
                 lastKey:  res.LastEvaluatedKey 
-            } )
+            } ),
+            headers: HEADERS
           };
     })
     .catch((error) =>{
         console.log("ERROR FROM DYNAMODB QUERY => ", error);
         response = {
             statusCode: error.statusCode,
-            body: JSON.stringify( { message: error.code } )
+            body: JSON.stringify( { message: error.code } ),
+            headers: HEADERS
         };
     })
     return response;

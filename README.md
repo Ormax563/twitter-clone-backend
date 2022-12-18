@@ -117,7 +117,8 @@ POST /create-tweet
 
 ```javascript
 {
-  "token": string
+  "token": string,
+  "tweet": string
 }
 ```
 
@@ -203,7 +204,9 @@ POST /get-tweets
   "tweets": [{
     "tweetID": string,
     "user": string,
-    "tweet": string
+    "tweet": string,
+    "nickname": string,
+    "createdAt": string
     } ...]
 }
 ```
@@ -231,7 +234,9 @@ POST /scan-tweets
   "tweets": [{
     "tweetID": string,
     "user": string,
-    "tweet": string
+    "tweet": string,
+    "nickname": string,
+    "createdAt": string
     } ...],
   "lastKey": {
     "tweet-id": {"S": string},
