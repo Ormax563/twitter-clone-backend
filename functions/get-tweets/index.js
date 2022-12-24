@@ -1,13 +1,14 @@
 const AWS = require("aws-sdk");
-const { HEADERS } = require("/opt/nodejs/index");
+const { HEADERS, getItems } = require("/opt/nodejs/index");
 const COGNITO_CLIENT = new AWS.CognitoIdentityServiceProvider({
   apiVersion: "2016-04-19",
   region: "us-east-1"
 });
-const dynamodb = new AWS.DynamoDB();
 
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
+    const limit = body.limit ? body.limit : 10;
+    const lastKey = body.lastKey ? body.lastKey: undefined;
     const token = body.token;
     const params = {
         AccessToken: token
@@ -24,46 +25,28 @@ exports.handler = async (event) => {
     }
     
     const username = user.Username;
-    
-    const paramsTweet = {
-        ExpressionAttributeValues: {
-            ":v1": {
-                S: username
-               }
-        },
-        KeyConditionExpression: "#user = :v1",
-        TableName: process.env.TWEETS_TABLE_NAME,
-        ExpressionAttributeNames: {
-            "#user": "user"
-        }
+    const getData = {
+        user: username,
+        limit
     };
-    await dynamodb.query(paramsTweet).promise()
-    .then((res) =>{
+    if(lastKey) getData.lastKey = lastKey;
+    try {
+        const result = await getItems(getData);
         response = {
             statusCode: 200,
-            body: JSON.stringify( { tweets: res.Items.map(item =>{
-                return(
-                    {
-                        tweetID: item["tweet-id"]["S"],
-                        user: item["user"]["S"],
-                        tweet: item["tweet"]["S"],
-                        nickname: item["nickname"]["S"],
-                        createdAt: item["createdAt"]["S"]
-                    }
-                )
+            body: JSON.stringify({
+                tweets: result
             }),
-            headers: HEADERS 
-        })
+            headers: HEADERS
         };
-    })
-    .catch((error) =>{
-        console.log("ERROR FROM DYNAMODB QUERY => ", error);
+    } catch (error) {
+        console.log("ERROR FROM GET ITEMS => ", error);
         response = {
             statusCode: error.statusCode,
             body: JSON.stringify( { message: error.code } ),
             headers: HEADERS
         };
-    })
+    }
     return response;
- 
+
 };

@@ -389,16 +389,16 @@ Resources:
   TweetsTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: !Ref TweetsTableName
+      TableName: 'tweets-table'
       AttributeDefinitions:
         - AttributeName: user
           AttributeType: S
-        - AttributeName: tweet-id
+        - AttributeName: tweetId
           AttributeType: S
       KeySchema:
         - AttributeName: user
           KeyType: HASH
-        - AttributeName: tweet-id
+        - AttributeName: tweetId
           KeyType: RANGE
       ProvisionedThroughput: 
         ReadCapacityUnits: 5
@@ -439,6 +439,6 @@ Resources:
       Description: Dependencies for twitter clone backend
       ContentUri: dependencies/nodejs
       CompatibleRuntimes:
-        - nodejs12.x
+        - nodejs14.x
     Metadata:
       BuildMethod: nodejs14.x

@@ -1,11 +1,10 @@
 const AWS = require("aws-sdk");
-const {randomUUID} = require('crypto');
-const { HEADERS } = require("/opt/nodejs/index");
+const { randomUUID } = require('crypto');
+const { HEADERS, putItem } = require("/opt/nodejs/index");
 const COGNITO_CLIENT = new AWS.CognitoIdentityServiceProvider({
   apiVersion: "2016-04-19",
   region: "us-east-1"
 });
-const dynamodb = new AWS.DynamoDB();
 const moment = require('moment');
 
 exports.handler = async (event) => {
@@ -28,29 +27,15 @@ exports.handler = async (event) => {
     
     const username = user.Username;
     const nickname = user.UserAttributes.find((item)=>item.Name === "custom:username").Value;
-    const paramsTweet = {
-        Item: {
-            "user":{
-                S: username
-            },
-            "tweet-id":{
-                S: randomUUID()
-            },
-            "tweet":{
-                S: tweet
-            },
-            "nickname":{
-                S: nickname
-            },
-            "createdAt":{
-                S: moment().format('YYYY-MM-DD HH:mm:ss')
-            }
-        },
-    ReturnConsumedCapacity: "TOTAL", 
-    TableName: process.env.TWEETS_TABLE_NAME
-    };
-    await dynamodb.putItem(paramsTweet).promise()
-    .then(() =>{
+    const dataTweet = {
+        user: username,
+        tweetId: randomUUID(),
+        tweet,
+        nickname,
+        createdAt: moment().format('YYYY-MM-DD HH:mm:ss')
+    }
+    try {
+        await putItem(dataTweet);  
         response = {
             statusCode: 200,
             body: JSON.stringify({
@@ -58,15 +43,15 @@ exports.handler = async (event) => {
             }),
             headers: HEADERS
           };
-    })
-    .catch((error) =>{
+    } catch (error) {
         console.log("ERROR FROM DYNAMODB PUTITEM => ", error);
         response = {
             statusCode: error.statusCode,
             body: JSON.stringify( { message: error.code } ),
             headers: HEADERS
         };
-    })
+    }
+
     return response;
  
 };

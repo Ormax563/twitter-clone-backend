@@ -1,10 +1,9 @@
 const AWS = require("aws-sdk");
-const { HEADERS } = require("/opt/nodejs/index");
+const { HEADERS, putFollower } = require("/opt/nodejs/index");
 const COGNITO_CLIENT = new AWS.CognitoIdentityServiceProvider({
   apiVersion: "2016-04-19",
   region: "us-east-1"
 });
-const dynamodb = new AWS.DynamoDB();
 
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
@@ -25,37 +24,28 @@ exports.handler = async (event) => {
     }
     
     const username = user.Username;
-    
-    const paramsTweet = {
-        Item: {
-            "user":{
-                S: username
-            },
-            "follow":{
-                S: follow
-            }
-        },
-    ReturnConsumedCapacity: "TOTAL", 
-    TableName: process.env.FOLLOWERS_TABLE_NAME
-    };
-    await dynamodb.putItem(paramsTweet).promise()
-    .then(() =>{
+    const dataFollower = {
+        user: username,
+        follow
+    }
+    try {
+        await putFollower(dataFollower);
         response = {
             statusCode: 200,
             body: JSON.stringify({
                 message: "Follower created successfully"
             }),
             headers: HEADERS
-          };
-    })
-    .catch((error) =>{
-        console.log("ERROR FROM DYNAMODB PUTITEM => ", error);
+        };
+    } catch (error) {
+        console.log("ERROR FROM CREATING FOLLOWER => ", error);
         response = {
             statusCode: error.statusCode,
             body: JSON.stringify( { message: error.code } ),
             headers: HEADERS
         };
-    })
+    }
+
     return response;
  
 };

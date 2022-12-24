@@ -197,7 +197,9 @@ POST /get-tweets
 
 ```javascript
 {
-  "token": string
+  "token": string,
+  "limit": number, // optional, limit of records to retrieve. Default: 10
+  "lastKey": object // optional, Key of the record from which you want to start retrieving
 }
 ```
 

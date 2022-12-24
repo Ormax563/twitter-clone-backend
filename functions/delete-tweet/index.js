@@ -1,15 +1,14 @@
 const AWS = require("aws-sdk");
-const { HEADERS } = require("/opt/nodejs/index");
+const { HEADERS, deleteItem } = require("/opt/nodejs/index");
 const COGNITO_CLIENT = new AWS.CognitoIdentityServiceProvider({
   apiVersion: "2016-04-19",
   region: "us-east-1"
 });
-const dynamodb = new AWS.DynamoDB();
 
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
     const token = body.token;
-    const tweetID = body.tweetID;
+    const tweetId = body.tweetID;
     const params = {
         AccessToken: token
     };
@@ -25,20 +24,12 @@ exports.handler = async (event) => {
     }
     
     const username = user.Username;
-    
-    const paramsTweet = {
-        Key: {
-            "user":{
-                S: username
-            },
-            "tweet-id":{
-                S: tweetID
-            }
-        },
-    TableName: process.env.TWEETS_TABLE_NAME
+    const deleteData = {
+        user: username,
+        tweetId
     };
-    await dynamodb.deleteItem(paramsTweet).promise()
-    .then(() =>{
+    try {
+        await deleteItem(deleteData);
         response = {
             statusCode: 200,
             body: JSON.stringify({
@@ -46,15 +37,15 @@ exports.handler = async (event) => {
             }),
             headers: HEADERS
           };
-    })
-    .catch((error) =>{
-        console.log("ERROR FROM DYNAMODB DELETEITEM => ", error);
+    } catch (error) {
+        console.log("ERROR FROM DELETE FUNCTION =>", error);
         response = {
             statusCode: error.statusCode,
             body: JSON.stringify( { message: error.code } ),
             headers: HEADERS
         };
-    })
+    }
+    
     return response;
  
 };

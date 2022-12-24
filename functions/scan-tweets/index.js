@@ -1,47 +1,32 @@
-const AWS = require("aws-sdk");
-const { HEADERS } = require("/opt/nodejs/index");
-const dynamodb = new AWS.DynamoDB();
+const { HEADERS, scanItems } = require("/opt/nodejs/index");
 
 exports.handler = async (event) => {
     const body = JSON.parse(event.body);
     const limit = body.limit ? body.limit : 10;
     const lastKey = body.lastKey ? body.lastKey: undefined;
-    const paramsTweet = {
-        TableName: process.env.TWEETS_TABLE_NAME,
-        Limit: limit
+    const dataScan = {
+        limit
     };
-    if(lastKey) paramsTweet.ExclusiveStartKey = lastKey;
-    await dynamodb.scan(paramsTweet).promise()
-    .then((res) =>{
+    if(lastKey) dataScan.lastKey = lastKey;
+    let response;
+    try {
+        const tweets = await scanItems(dataScan);
         response = {
             statusCode: 200,
-            body: JSON.stringify( { 
-                tweets: res.Items.map(item =>{
-                    return(
-                        {
-                            tweetID: item["tweet-id"]["S"],
-                            user: item["user"]["S"],
-                            tweet: item["tweet"]["S"],
-                            nickname: item["nickname"]["S"],
-                            createdAt: item["createdAt"]["S"]
-                        }
-                    )
-                }).sort((a,b) => 
-                    new Date(a["createdAt"]["S"]) - new Date(b["createdAt"]["S"])
-                ).reverse() ,
-                lastKey:  res.LastEvaluatedKey 
-            } ),
+            body: JSON.stringify({
+                tweets: tweets.tweets,
+                lastKey: tweets.lastKey
+            }),
             headers: HEADERS
-          };
-    })
-    .catch((error) =>{
-        console.log("ERROR FROM DYNAMODB QUERY => ", error);
+        }
+    } catch (error) {
+        console.log("ERROR FROM DYNAMODB SCAN => ", error);
         response = {
             statusCode: error.statusCode,
             body: JSON.stringify( { message: error.code } ),
             headers: HEADERS
         };
-    })
-    return response;
- 
+    }
+    
+   return response;
 };
