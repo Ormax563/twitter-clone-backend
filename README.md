@@ -208,12 +208,16 @@ POST /get-tweets
 ```javascript
 {
   "tweets": [{
-    "tweetID": string,
+    "tweetId": string,
     "user": string,
     "tweet": string,
     "nickname": string,
     "createdAt": string
-    } ...]
+    } ...],
+  "lastKey":{
+    "user": string,
+    "tweetId": string
+  } // Key of the last record fetched
 }
 ```
 ### Scan Tweets
@@ -238,16 +242,16 @@ POST /scan-tweets
 ```javascript
 {
   "tweets": [{
-    "tweetID": string,
+    "tweetId": string,
     "user": string,
     "tweet": string,
     "nickname": string,
     "createdAt": string
     } ...],
   "lastKey": {
-    "tweet-id": {"S": string},
-    "user": {"S": string},
-    "tweet": {"S": string}
+    "tweetId": string,
+    "user": string,
+    "tweet": string
   } // Key of the last record fetched
 }
 ```
@@ -328,9 +332,9 @@ POST /list-followers
     "user":  string
   } ...],
   "lastKey": {
-        "follow": {"S": string},
-        "user": {"S": string}
-    } // Key of the last record fetched
+      "follow": string,
+      "user": string
+  } // Key of the last record fetched
 }
 ```
 
